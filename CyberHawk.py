@@ -1,13 +1,10 @@
-from termcolor import colored
 from collections import deque
-import pyfiglet
-import time
 import requests
 import argparse
 import threading
 
 # ASCII title
-ascii_title = pyfiglet.figlet_format("""
+ascii_title = ("""
  
  ██████╗██╗   ██╗██████╗ ███████╗██████╗ ██╗  ██╗ █████╗ ██╗    ██╗██╗  ██╗    ██████╗ ██╗██████╗ ███████╗██████╗ ██╗   ██╗
 ██╔════╝╚██╗ ██╔╝██╔══██╗██╔════╝██╔══██╗██║  ██║██╔══██╗██║    ██║██║ ██╔╝    ██╔══██╗██║██╔══██╗██╔════╝██╔══██╗╚██╗ ██╔╝
@@ -18,7 +15,7 @@ ascii_title = pyfiglet.figlet_format("""
                                                                                                                            
 """)
 
-colored_title = colored(ascii_title, "green")  # Color of the ASCII title
+
 
 
 
@@ -44,7 +41,7 @@ def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
 
 # Main function to handle arguments and threading
 def main():
-    print(colored_title)
+    print(ascii_title)
     parser = argparse.ArgumentParser(description="Multi-Threaded Web Directory Enumerator")
 
     # CLI arguments
