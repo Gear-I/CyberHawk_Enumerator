@@ -19,6 +19,20 @@ ascii_title = ("""
 
 
 
+# Function to chunk a list into balanced sublists
+def chunk_list(lst, num_chunks):
+    if num_chunks <= 0:
+        raise ValueError("Number of chunks must be greater than zero.")
+
+    if not lst:  # Handle empty list case
+        return [[] for _ in range(num_chunks)]
+
+    chunk_size = max(1, len(lst) // num_chunks)  # Ensure at least one item per chunk
+    chunks = [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
+    return chunks
+
+
 # Function to check if a directory exists
 def check_dir(base_url, directory, timeout, valid_dirs, lock):
     url = f"{base_url}/{directory}.html"
@@ -31,36 +45,28 @@ def check_dir(base_url, directory, timeout, valid_dirs, lock):
     except requests.exceptions.RequestException:
         pass  # Ignore timeout and other connection issues
 
+
 # Worker function for threading
-def worker(base_url, directories_chunck, timeout, thread_id, valid_dirs, lock):
-    print(f"[Thread {thread_id}] started") # Prints when thread starts
-    for directory in directories_chunck:
+def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
+    print(f"[Thread {thread_id}] started")
+    while dirs:  # Check if there's work left
+        try:
+            directory = dirs.pop()
+        except IndexError:
+            break  # Exit thread if queue is empty
+
         check_dir(base_url, directory, timeout, valid_dirs, lock)
-    print(f"[Thread {thread_id}] finished") # Prints when thread finishes
+
+    print(f"[Thread {thread_id}] finished")
 
 
-def chunk_list(lst, num_chunks):
-    avg_chunk_size = len(lst) // num_chunks
-    chunks = []
-    start_index = 0
-
-    for i in range(num_chunks):
-        end_index = start_index + avg_chunk_size
-        if i == num_chunks - 1: # Handle remainder for the last chunk
-            chunks.append(lst[start_index:])
-        else:
-            chunks.append(lst[start_index:end_index])
-        start_index = end_index
-
-        return chunks
-
-# Main function to handle arguments and threading
+# Main function
 def main():
     print(ascii_title)
     parser = argparse.ArgumentParser(description="Multi-Threaded Web Directory Enumerator")
 
     # CLI arguments
-    parser.add_argument("target", help="Target IP address or website URL (e.g., http://192.168.1.1 or http://example.com)")
+    parser.add_argument("target", help="Target IP address or website URL (e.g., http://192.168.1.1)")
     parser.add_argument("-w", "--wordlist", required=True, help="Path to the wordlist file")
     parser.add_argument("-t", "--threads", type=int, default=10, help="Number of threads (default: 10)")
     parser.add_argument("-to", "--timeout", type=int, default=5, help="Request timeout in seconds (default: 5)")
@@ -75,24 +81,29 @@ def main():
         print("[-] Error: Wordlist file not found.")
         return
 
-    # Chunk the directories for each thread
+    # Chunk wordlist for thread distribution
     chunks = chunk_list(directories, args.threads)
-    valid_dirs = [] # List to store valid directories
+    valid_dirs = []  # List to store valid directories
     lock = threading.Lock()
 
     print(f"[*] Scanning {args.target} with {args.threads} threads...")
 
     # Start threading
     threads = []
-    for i in range(1, args.threads + 1):  # Thread IDs start from 1
-        t = threading.Thread(target=worker, args=(args.target, chunks[i -1], args.timeout, i, valid_dirs, lock))
+    for i in range(1, args.threads + 1):
+        if i - 1 >= len(chunks):  # Ensure valid chunk index
+            print(f"[-] Skipping thread {i}: No more chunks available.")
+            continue
+
+        dirs = deque(chunks[i - 1])  # Convert chunk to a deque for thread-safe pop()
+        t = threading.Thread(target=worker, args=(args.target, dirs, args.timeout, i, valid_dirs, lock))
         t.start()
         threads.append(t)
 
     for t in threads:
-        t.join()  # Wait for all threads to finish
+        t.join()
 
-    # After all threads complete, print valid directories
+    # Print valid directories found
     if valid_dirs:
         print("[*] Valid directories found:")
         for valid_dir in valid_dirs:
@@ -102,6 +113,6 @@ def main():
 
     print("[*] Scan completed.")
 
-# Run the script
+
 if __name__ == "__main__":
     main()
