@@ -39,7 +39,7 @@ def worker(base_url, directories_chunck, timeout, thread_id, valid_dirs, lock):
     print(f"[Thread {thread_id}] finished") # Prints when thread finishes
 
 
-def chunk_list(list, num_chunks):
+def chunk_list(lst, num_chunks):
     avg_chunk_size = len(lst) // num_chunks
     chunks = []
     start_index = 0
@@ -77,7 +77,7 @@ def main():
 
     # Chunk the directories for each thread
     chunks = chunk_list(directories, args.threads)
-    valid_dir = [] # List to store valid directories
+    valid_dirs = [] # List to store valid directories
     lock = threading.Lock()
 
     print(f"[*] Scanning {args.target} with {args.threads} threads...")
