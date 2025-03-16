@@ -40,11 +40,13 @@ def check_dir(base_url, directory, timeout):
         pass  # Ignore timeout and other connection issues
 
 # Worker function for threading
-def worker(base_url, q, timeout):
+def worker(base_url, q, timeout, thread_id):
+    print(f"[Thread {thread_id}] started") # Prints when thread starts
     while not q.empty():
         directory = q.get()
         check_dir(base_url, directory, timeout)
         q.task_done()
+        print(f"[Thread {thread_id}] finished") # Prints when thread finishes
 
 # Main function to handle arguments and threading
 def main():
