@@ -41,11 +41,11 @@ def check_dir(base_url, directory, timeout):
         pass  # Ignore timeout and other connection issues
 
 # Worker function for threading
-def worker(base_url, q, timeout, thread_id):
+def worker(base_url, q, timeout, thread_id,valid_dirs):
     print(f"[Thread {thread_id}] started") # Prints when thread starts
     while not q.empty():
         directory = q.get()
-        check_dir(base_url, directory, timeout)
+        check_dir(base_url, directory, timeout, valid_dirs)
         q.task_done()
         print(f"[Thread {thread_id}] finished") # Prints when thread finishes
 
@@ -80,7 +80,7 @@ def main():
     # Start threading
     threads = []
     for i in range(1, args.threads + 1):  # Thread IDs start from 1
-        t = threading.Thread(target=worker, args=(i, args.target, q, args.timeout))
+        t = threading.Thread(target=worker, args=(i, args.target, q, args.timeout, valid_dirs))
         t.start()
         threads.append(t)
 
