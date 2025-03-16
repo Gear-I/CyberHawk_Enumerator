@@ -30,7 +30,7 @@ def print_blinking_title():
         time.sleep(0.5)
 
 # Function to check if a directory exists
-def check_dir(base_url, directory, timeout):
+def check_dir(base_url, directory, timeout,valid_dirs):
     url = f"{base_url}/{directory}.html"
     try:
         response = requests.get(url, timeout=timeout)
