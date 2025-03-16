@@ -4,7 +4,7 @@ import time
 import requests
 import argparse
 import threading
-import queue
+import queuelib
 
 
 # ASCII title
@@ -43,8 +43,8 @@ def check_dir(base_url, directory, timeout,valid_dirs):
 # Worker function for threading
 def worker(base_url, q, timeout, thread_id,valid_dirs):
     print(f"[Thread {thread_id}] started") # Prints when thread starts
-    while not queue.empty():
-        directory = queue.get()
+    while not q.empty():
+        directory = q.get()
         check_dir(base_url, directory, timeout, valid_dirs)
         q.task_done()
         print(f"[Thread {thread_id}] finished") # Prints when thread finishes
@@ -69,8 +69,10 @@ def main():
         print("[-] Error: Wordlist file not found.")
         return
 
+# Intialize the queue as a queuelib Queue
+    q = queuelib.Queue()
     for directory in directories:
-        queue.put(directory)
+        q.put(directory)
 
         valid_dirs = [] # List to store valid directories
 
@@ -79,7 +81,7 @@ def main():
     # Start threading
     threads = []
     for i in range(1, args.threads + 1):  # Thread IDs start from 1
-        t = threading.Thread(target=worker, args=(i, args.target, queue, args.timeout, valid_dirs))
+        t = threading.Thread(target=worker, args=(i, args.target, q, args.timeout, valid_dirs))
         t.start()
         threads.append(t)
 
@@ -102,6 +104,4 @@ def main():
 
 # Run the script
 if __name__ == "__main__":
-
-    # Run the main logic
     main()
