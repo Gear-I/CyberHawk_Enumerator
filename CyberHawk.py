@@ -35,6 +35,7 @@ def check_dir(base_url, directory, timeout):
     try:
         response = requests.get(url, timeout=timeout)
         if response.status_code != 404:
+            valid_dirs.append(url)  # Store the valid directory URL
             print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
     except requests.exceptions.RequestException:
         pass  # Ignore timeout and other connection issues
@@ -72,18 +73,32 @@ def main():
     for directory in directories:
         q.put(directory)
 
+        valid_dirs = [] # List to store valid directories
+
     print(f"[*] Scanning {args.target} with {args.threads} threads...")
 
     # Start threading
     threads = []
-    for _ in range(args.threads):
-        t = threading.Thread(target=worker, args=(args.target, q, args.timeout))
+    for i in range(1, args.threads + 1):  # Thread IDs start from 1
+        t = threading.Thread(target=worker, args=(i, args.target, q, args.timeout))
         t.start()
         threads.append(t)
 
     for t in threads:
         t.join()
 
+
+    for t in threads:
+        t.join()
+
+# After all threads complete, print valid directories
+    if valid_dirs:
+        print("[*] Valid directories found:")
+        for valid_dir in valid_dirs:
+            print(valid_dir)
+    else:
+        print("[*] No valid directories found.")
+    
     print("[*] Scan completed.")
 
 # Run the script
