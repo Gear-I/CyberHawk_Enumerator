@@ -102,10 +102,6 @@ def main():
 
 # Run the script
 if __name__ == "__main__":
-    # Start the blinking title in a separate thread
-    title_thread = threading.Thread(target=print_blinking_title)
-    title_thread.daemon = True  # Allow the thread to exit when the main program ends
-    title_thread.start()
 
     # Run the main logic
     main()
