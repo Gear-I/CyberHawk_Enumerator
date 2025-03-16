@@ -1,4 +1,4 @@
-from termcolor import colored
+import colored
 import pyfiglet
 import time
 import requests
