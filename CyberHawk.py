@@ -6,8 +6,6 @@ import requests
 import argparse
 import threading
 
-
-    
 # ASCII title
 ascii_title = pyfiglet.figlet_format("""
  
@@ -22,16 +20,10 @@ ascii_title = pyfiglet.figlet_format("""
 
 colored_title = colored(ascii_title, "green")  # Color of the ASCII title
 
-# Print ASCII title continuously in a separate thread
-def print_blinking_title():
-    while True:
-        print(colored(ascii_title, "green"))
-        time.sleep(0.5)  # Blinking speed
-        print("\033c", end="")  # Clears screen
-        time.sleep(0.5)
+
 
 # Function to check if a directory exists
-def check_dir(base_url, directory, timeout,valid_dirs,lock):
+def check_dir(base_url, directory, timeout, valid_dirs, lock):
     url = f"{base_url}/{directory}.html"
     try:
         response = requests.get(url, timeout=timeout)
@@ -43,15 +35,16 @@ def check_dir(base_url, directory, timeout,valid_dirs,lock):
         pass  # Ignore timeout and other connection issues
 
 # Worker function for threading
-def worker(base_url, dirs, timeout, thread_id,valid_dirs):
+def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
     print(f"[Thread {thread_id}] started") # Prints when thread starts
-    while dirs():
-        directory = dirs.pop()
-        check_dir(base_url, directory, timeout, valid_dirs,lock)
-        print(f"[Thread {thread_id}] finished") # Prints when thread finishes
+    while dirs:  # Check if dirs is not empty
+        directory = dirs.pop()  # Get the next directory
+        check_dir(base_url, directory, timeout, valid_dirs, lock)
+    print(f"[Thread {thread_id}] finished") # Prints when thread finishes
 
 # Main function to handle arguments and threading
-def argu():
+def main():
+    print(colored_title)
     parser = argparse.ArgumentParser(description="Multi-Threaded Web Directory Enumerator")
 
     # CLI arguments
@@ -70,35 +63,33 @@ def argu():
         print("[-] Error: Wordlist file not found.")
         return
 
-# Intialize the queue as a queuelib Queue
+    # Initialize the deque as a queue for directories
     dirs = deque(directories)
-    valid_dirs = [] # List to store valid directories
-    lock = threading.Lock()
+    valid_dirs = []  # List to store valid directories
+    lock = threading.Lock()  # Lock for thread-safe operations
 
     print(f"[*] Scanning {args.target} with {args.threads} threads...")
 
     # Start threading
     threads = []
     for i in range(1, args.threads + 1):  # Thread IDs start from 1
-        t = threading.Thread(target=worker, args=(i, args.target, dirs, args.timeout, valid_dirs, lock))
+        t = threading.Thread(target=worker, args=(args.target, dirs, args.timeout, i, valid_dirs, lock))
         t.start()
         threads.append(t)
 
     for t in threads:
-        t.join()
+        t.join()  # Wait for all threads to finish
 
-
-    for t in threads:
-        t.join()
-
-# After all threads complete, print valid directories
+    # After all threads complete, print valid directories
     if valid_dirs:
         print("[*] Valid directories found:")
         for valid_dir in valid_dirs:
             print(valid_dir)
     else:
         print("[*] No valid directories found.")
-    
+
     print("[*] Scan completed.")
 
-
+# Run the script
+if __name__ == "__main__":
+    main()
