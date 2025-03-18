@@ -43,18 +43,19 @@ def chunk_list(lst, num_chunks):
 # Function to check if a directory exists
 def check_dir(base_url, directory, timeout, valid_dirs, lock):
     url = f"{base_url.rstrip('/')}/{directory}.html" # Proper formatting
+
     try:
+
         response = requests.get(url, timeout=timeout)
         if response.status_code != 404:
-            with lock:
                 valid_dirs.append(url)  # Store the valid directory URL
-            print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
-    except requests.exceptions.RequestException:
-        pass  # Ignore timeout and other connection issues
+                print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
+    except requests.exceptions.RequestException as e:
+        print(f"[-] Error checking {url}: {e}") # Display errors instead of ignoring them
 
 
 # Worker function for threading
-def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
+def worker(base_url, dirs, timeout, thread_id, valid_dirs):
     print(f"[Thread {thread_id}] started")
     while dirs:  # Check if there's work left
         try:
@@ -62,7 +63,7 @@ def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
         except IndexError:
             break  # Exit thread if queue is empty
 
-        check_dir(base_url, directory, timeout, valid_dirs, lock)
+        check_dir(base_url, directory, timeout, valid_dirs)
 
     print(f"[Thread {thread_id}] finished")
 
@@ -106,7 +107,7 @@ def main():
             continue
 
         dirs = deque(chunks[i - 1])  # Convert chunk to a deque for thread-safe pop()
-        t = threading.Thread(target=worker, args=(target_url, dirs, args.timeout, valid_dirs, lock))
+        t = threading.Thread(target=worker, args=(target_url, dirs, args.timeout, valid_dirs))
         t.start()
         threads.append(t)
 
