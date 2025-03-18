@@ -16,16 +16,7 @@ ascii_title = ("""
 """)
 
 
-# Function to validate URL Scheme to support HTTPS
-def validate_url(target):
-    if not target.startswith(("http://", "https://")):
-        print("[*] No scheme detected in target. Defaulting to HTTPS.")
-        return "https://" + target # Default to HTTPS if no scheme provided
-    try:
-        response = requests.get(target, timeout=5)
-        print(f"[*] Response Code: {response.status_code}")
-    except requests.RequestException as e:
-        print(f"[-] Error: {e}")
+
 
 
 # Function to chunk a list into balanced sublists
@@ -43,17 +34,20 @@ def chunk_list(lst, num_chunks):
 
 
 # Function to check if a directory exists
-def check_dir(base_url, directory, timeout, valid_dirs):
-    url = f"{base_url.rstrip('/')}/{directory}.html" # Proper formatting
-    response = requests.get(url, timeout=timeout)
-    if response.status_code != 404:
+def check_dir(base_url, directory, timeout, valid_dirs, lock):
+    url = f"{base_url}/{directory}.html"
+    try:
+        response = requests.get(url, timeout=timeout)
+        if response.status_code != 404:
+            with lock:
                 valid_dirs.append(url)  # Store the valid directory URL
-                print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
-
+            print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
+    except requests.exceptions.RequestException:
+        pass  # Ignore timeout and other connection issues
 
 
 # Worker function for threading
-def worker(base_url, dirs, timeout, thread_id, valid_dirs):
+def worker(base_url, dirs, timeout, thread_id, valid_dirs, lock):
     print(f"[Thread {thread_id}] started")
     while dirs:  # Check if there's work left
         try:
@@ -61,7 +55,7 @@ def worker(base_url, dirs, timeout, thread_id, valid_dirs):
         except IndexError:
             break  # Exit thread if queue is empty
 
-        check_dir(base_url, directory, timeout, valid_dirs)
+        check_dir(base_url, directory, timeout, valid_dirs, lock)
 
     print(f"[Thread {thread_id}] finished")
 
@@ -79,9 +73,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Normalize URL to include HTTP and HTTPS
-
-    target_url = validate_url(args.target)
     # Read wordlist and create a queue
     try:
         with open(args.wordlist, "r") as file:
@@ -93,8 +84,9 @@ def main():
     # Chunk wordlist for thread distribution
     chunks = chunk_list(directories, args.threads)
     valid_dirs = []  # List to store valid directories
+    lock = threading.Lock()
 
-    print(f"[*] Scanning {target_url} with {args.threads} threads...")
+    print(f"[*] Scanning {args.target} with {args.threads} threads...")
 
     # Start threading
     threads = []
@@ -104,7 +96,7 @@ def main():
             continue
 
         dirs = deque(chunks[i - 1])  # Convert chunk to a deque for thread-safe pop()
-        t = threading.Thread(target=worker, args=(target_url, dirs, args.timeout, valid_dirs))
+        t = threading.Thread(target=worker, args=(args.target, dirs, args.timeout, i, valid_dirs, lock))
         t.start()
         threads.append(t)
 
