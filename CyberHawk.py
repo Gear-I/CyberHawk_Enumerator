@@ -41,7 +41,7 @@ def chunk_list(lst, num_chunks):
 
 
 # Function to check if a directory exists
-def check_dir(base_url, directory, timeout, valid_dirs, lock):
+def check_dir(base_url, directory, timeout, valid_dirs):
     url = f"{base_url.rstrip('/')}/{directory}.html" # Proper formatting
 
     try:
