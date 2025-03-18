@@ -95,7 +95,6 @@ def main():
     # Chunk wordlist for thread distribution
     chunks = chunk_list(directories, args.threads)
     valid_dirs = []  # List to store valid directories
-    lock = threading.Lock()
 
     print(f"[*] Scanning {target_url} with {args.threads} threads...")
 
