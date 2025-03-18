@@ -43,15 +43,11 @@ def chunk_list(lst, num_chunks):
 # Function to check if a directory exists
 def check_dir(base_url, directory, timeout, valid_dirs):
     url = f"{base_url.rstrip('/')}/{directory}.html" # Proper formatting
-
-    try:
-
-        response = requests.get(url, timeout=timeout)
-        if response.status_code != 404:
+    response = requests.get(url, timeout=timeout)
+    if response.status_code != 404:
                 valid_dirs.append(url)  # Store the valid directory URL
                 print(f"[+] Valid directory found: {url} (Status: {response.status_code})")
-    except requests.exceptions.RequestException as e:
-        print(f"[-] Error checking {url}: {e}") # Display errors instead of ignoring them
+
 
 
 # Worker function for threading
