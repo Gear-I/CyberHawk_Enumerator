@@ -2,7 +2,6 @@ from collections import deque
 import requests
 import argparse
 import threading
-import urllib.parse
 
 # ASCII title
 ascii_title = ("""
@@ -19,11 +18,14 @@ ascii_title = ("""
 
 # Function to validate URL Scheme to support HTTPS
 def validate_url(target):
-    parsed_url = urllib.parse.urlparse(target)
-    if not parsed_url.scheme:
+    if not target.startswith("http://", "https://"):
         print("[*] No scheme detected in target. Defaulting to HTTPS.")
         return "https://" + target # Default to HTTPS if no scheme provided
-    return target
+    try:
+        response = requests.get(target, timeout=5)
+        print(f"[*] Response Code: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"[-] Error: {e}")
 
 
 # Function to chunk a list into balanced sublists
