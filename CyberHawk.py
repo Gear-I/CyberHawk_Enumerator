@@ -18,7 +18,7 @@ ascii_title = ("""
 
 # Function to validate URL Scheme to support HTTPS
 def validate_url(target):
-    if not target.startswith("http://", "https://"):
+    if not target.startswith(("http://", "https://")):
         print("[*] No scheme detected in target. Defaulting to HTTPS.")
         return "https://" + target # Default to HTTPS if no scheme provided
     try:
