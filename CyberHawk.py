@@ -2,6 +2,7 @@ from collections import deque
 import requests
 import argparse
 import threading
+import urllib.parse
 
 # ASCII title
 ascii_title = ("""
@@ -16,7 +17,13 @@ ascii_title = ("""
 """)
 
 
-
+# Function to validate URL Scheme to support HTTPS
+def validate_url(target):
+    parsed_url = urllib.parse.urlparse(target)
+    if not parsed_url.scheme:
+        print("[*] No scheme detected in target. Defaulting to HTTPS.")
+        return "https://" + target # Default to HTTPS if no scheme provided
+    return target
 
 
 # Function to chunk a list into balanced sublists
@@ -35,7 +42,7 @@ def chunk_list(lst, num_chunks):
 
 # Function to check if a directory exists
 def check_dir(base_url, directory, timeout, valid_dirs, lock):
-    url = f"{base_url}/{directory}.html"
+    url = f"{base_url.rstrip('/')}/{directory}.html" # Proper formatting
     try:
         response = requests.get(url, timeout=timeout)
         if response.status_code != 404:
@@ -73,6 +80,9 @@ def main():
 
     args = parser.parse_args()
 
+    # Normalize URL to include HTTP and HTTPS
+
+    target_url = validate_url(args.target)
     # Read wordlist and create a queue
     try:
         with open(args.wordlist, "r") as file:
@@ -86,7 +96,7 @@ def main():
     valid_dirs = []  # List to store valid directories
     lock = threading.Lock()
 
-    print(f"[*] Scanning {args.target} with {args.threads} threads...")
+    print(f"[*] Scanning {target_url} with {args.threads} threads...")
 
     # Start threading
     threads = []
@@ -96,7 +106,7 @@ def main():
             continue
 
         dirs = deque(chunks[i - 1])  # Convert chunk to a deque for thread-safe pop()
-        t = threading.Thread(target=worker, args=(args.target, dirs, args.timeout, i, valid_dirs, lock))
+        t = threading.Thread(target=worker, args=(target_url, args, dirs, args.timeout, i, valid_dirs, lock))
         t.start()
         threads.append(t)
 
