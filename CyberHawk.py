@@ -106,7 +106,7 @@ def main():
             continue
 
         dirs = deque(chunks[i - 1])  # Convert chunk to a deque for thread-safe pop()
-        t = threading.Thread(target=worker, args=(target_url, args, dirs, args.timeout, valid_dirs, lock))
+        t = threading.Thread(target=worker, args=(target_url, dirs, args.timeout, valid_dirs, lock))
         t.start()
         threads.append(t)
 
